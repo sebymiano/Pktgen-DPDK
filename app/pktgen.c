@@ -1003,6 +1003,8 @@ pktgen_setup_packets(port_info_t *info, struct rte_mempool *mp, uint16_t qid)
 
 	pkt_data.info = info;
 	pkt_data.qid = qid;
+    
+    srand(time(0));
 
 #if RTE_VERSION >= RTE_VERSION_NUM(16, 7, 0, 0)
 	rte_mempool_obj_iter(mp, pktgen_setup_cb, &pkt_data);
