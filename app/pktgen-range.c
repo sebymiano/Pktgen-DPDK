@@ -7,9 +7,42 @@
 
 #include <rte_lua.h>
 
+#include <math.h>
+#include <stdlib.h>
+
 #include "pktgen-display.h"
 #include "pktgen-log.h"
 #include "pktgen.h"
+
+static double box_muller(double m, double s)	/* normal random variate generator */
+{				        /* mean m, standard deviation s */
+    double x1, x2, w, _y1;
+    static double y2;
+    static int use_last = 0;
+
+    if (use_last)		        /* use value from previous call */
+    {
+        _y1 = y2;
+        use_last = 0;
+    }
+    else
+    {
+        do {
+            x1 = 2.0 * drand48() - 1.0;
+            x2 = 2.0 * drand48() - 1.0;
+            w = x1 * x1 + x2 * x2;
+        } while ( w >= 1.0 );
+
+        w = sqrt( (-2.0 * log( w ) ) / w );
+        _y1 = x1 * w;
+        y2 = x2 * w;
+        use_last = 1;
+    }
+
+    double result = ( m + _y1 * s );
+
+    return result;
+}
 
 /**************************************************************************//**
  *
@@ -47,33 +80,21 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 
 			if (unlikely(range->src_port_inc != 0) ) {
 				uint16_t sport = pkt->sport;
-				sport += range->src_port_inc;
-				if (sport < range->src_port_min)
-					sport = range->src_port_max;
-				if (sport > range->src_port_max)
-					sport = range->src_port_min;
+				sport = box_muller((range->src_port_max + range->src_port_min)/2, (range->src_port_max - range->src_port_min)/4);
 				pkt->sport = sport;
 			} else
 				pkt->sport = range->src_port;
 
 			if (unlikely(range->dst_port_inc != 0) ) {
 				uint16_t dport = pkt->dport;
-				dport += range->dst_port_inc;
-				if (dport < range->dst_port_min)
-					dport = range->dst_port_max;
-				if (dport > range->dst_port_max)
-					dport = range->dst_port_min;
+				dport = box_muller((range->dst_port_max + range->dst_port_min)/2, (range->dst_port_max - range->dst_port_min)/4);
 				pkt->dport = dport;
 			} else
 				pkt->dport = range->dst_port;
 
 			if (unlikely(range->src_ip_inc != 0)) {
 				uint32_t p = pkt->ip_src_addr.addr.ipv4.s_addr;
-				p += range->src_ip_inc;
-				if (p < range->src_ip_min)
-					p = range->src_ip_max;
-				else if (p > range->src_ip_max)
-					p = range->src_ip_min;
+				p = box_muller((range->src_ip_max + range->src_ip_min)/2, (range->src_ip_max - range->src_ip_min)/4);
 				pkt->ip_src_addr.addr.ipv4.s_addr = p;
 			} else
 				pkt->ip_src_addr.addr.ipv4.s_addr =
@@ -81,11 +102,7 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 
 			if (unlikely(range->dst_ip_inc != 0)) {
 				uint32_t p = pkt->ip_dst_addr.addr.ipv4.s_addr;
-				p += range->dst_ip_inc;
-				if (p < range->dst_ip_min)
-					p = range->dst_ip_max;
-				else if (p > range->dst_ip_max)
-					p = range->dst_ip_min;
+				p = box_muller((range->dst_ip_max + range->dst_ip_min)/2, (range->dst_ip_max - range->dst_ip_min)/4);
 				pkt->ip_dst_addr.addr.ipv4.s_addr = p;
 			} else
 				pkt->ip_dst_addr.addr.ipv4.s_addr =
