@@ -95,6 +95,7 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 			if (unlikely(range->src_ip_inc != 0)) {
 				uint32_t p = pkt->ip_src_addr.addr.ipv4.s_addr;
 				p = box_muller((range->src_ip_max + range->src_ip_min)/2, (range->src_ip_max - range->src_ip_min)/4);
+				p = p % (range->src_ip_max + 1 - range->src_ip_min) + range->src_ip_min;
 				pkt->ip_src_addr.addr.ipv4.s_addr = p;
 			} else
 				pkt->ip_src_addr.addr.ipv4.s_addr =
