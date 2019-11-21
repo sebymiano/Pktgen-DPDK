@@ -44,6 +44,7 @@ static double box_muller(double m, double s)	/* normal random variate generator 
     return result;
 }
 
+static double std_dev = 0.2;
 /**************************************************************************//**
  *
  * pktgen_range_ctor - Construct a range packet in buffer provided.
@@ -80,21 +81,23 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 
 			if (unlikely(range->src_port_inc != 0) ) {
 				uint16_t sport = pkt->sport;
-				sport = rand() % (range->src_port_max + 1 - range->src_port_min) + range->src_port_min;
+				sport = box_muller((range->src_port_max + range->src_port_min)/2, std_dev);
+				sport = sport % (range->src_port_max + 1 - range->src_port_min) + range->src_port_min;
 				pkt->sport = sport;
 			} else
 				pkt->sport = range->src_port;
 
 			if (unlikely(range->dst_port_inc != 0) ) {
 				uint16_t dport = pkt->dport;
-				dport = rand() % (range->dst_port_max + 1 - range->dst_port_min) + range->dst_port_min;
+				dport = box_muller((range->dst_port_max + range->dst_port_min)/2, std_dev);
+				dport = dport % (range->dst_port_max + 1 - range->dst_port_min) + range->dst_port_min;
 				pkt->dport = dport;
 			} else
 				pkt->dport = range->dst_port;
 
 			if (unlikely(range->src_ip_inc != 0)) {
 				uint32_t p = pkt->ip_src_addr.addr.ipv4.s_addr;
-				p = box_muller((range->src_ip_max + range->src_ip_min)/2, (range->src_ip_max - range->src_ip_min)/4);
+				p = box_muller((range->src_ip_max + range->src_ip_min)/2, std_dev);
 				p = p % (range->src_ip_max + 1 - range->src_ip_min) + range->src_ip_min;
 				pkt->ip_src_addr.addr.ipv4.s_addr = p;
 			} else
@@ -103,7 +106,8 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 
 			if (unlikely(range->dst_ip_inc != 0)) {
 				uint32_t p = pkt->ip_dst_addr.addr.ipv4.s_addr;
-				p = rand() % (range->dst_ip_max + 1 - range->dst_ip_min) + range->dst_ip_min;
+				p = box_muller((range->dst_ip_max + range->dst_ip_min)/2, std_dev);
+				p = p % (range->dst_ip_max + 1 - range->dst_ip_min) + range->dst_ip_min;
 				pkt->ip_dst_addr.addr.ipv4.s_addr = p;
 			} else
 				pkt->ip_dst_addr.addr.ipv4.s_addr =
