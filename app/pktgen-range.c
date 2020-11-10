@@ -47,22 +47,14 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 
 			if (unlikely(range->src_port_inc != 0) ) {
 				uint16_t sport = pkt->sport;
-				sport += range->src_port_inc;
-				if (sport < range->src_port_min)
-					sport = range->src_port_max;
-				if (sport > range->src_port_max)
-					sport = range->src_port_min;
+				sport = rand() % (range->src_port_max + 1 - range->src_port_min) + range->src_port_min;
 				pkt->sport = sport;
 			} else
 				pkt->sport = range->src_port;
 
 			if (unlikely(range->dst_port_inc != 0) ) {
 				uint16_t dport = pkt->dport;
-				dport += range->dst_port_inc;
-				if (dport < range->dst_port_min)
-					dport = range->dst_port_max;
-				if (dport > range->dst_port_max)
-					dport = range->dst_port_min;
+				dport = rand() % (range->dst_port_max + 1 - range->dst_port_min) + range->dst_port_min;
 				pkt->dport = dport;
 			} else
 				pkt->dport = range->dst_port;
@@ -80,22 +72,14 @@ pktgen_range_ctor(range_info_t *range, pkt_seq_t *pkt)
 
 			if (unlikely(range->src_ip_inc != 0)) {
 				uint32_t p = pkt->ip_src_addr.addr.ipv4.s_addr;
-				p += range->src_ip_inc;
-				if (p < range->src_ip_min)
-					p = range->src_ip_max;
-				else if (p > range->src_ip_max)
-					p = range->src_ip_min;
+				p = rand() % (range->src_ip_max + 1 - range->src_ip_min) + range->src_ip_min;
 				pkt->ip_src_addr.addr.ipv4.s_addr = p;
 			} else
 				pkt->ip_src_addr.addr.ipv4.s_addr = range->src_ip;
 
 			if (unlikely(range->dst_ip_inc != 0)) {
 				uint32_t p = pkt->ip_dst_addr.addr.ipv4.s_addr;
-				p += range->dst_ip_inc;
-				if (p < range->dst_ip_min)
-					p = range->dst_ip_max;
-				else if (p > range->dst_ip_max)
-					p = range->dst_ip_min;
+				p = rand() % (range->dst_ip_max + 1 - range->dst_ip_min) + range->dst_ip_min;
 				pkt->ip_dst_addr.addr.ipv4.s_addr = p;
 			} else
 				pkt->ip_dst_addr.addr.ipv4.s_addr = range->dst_ip;
