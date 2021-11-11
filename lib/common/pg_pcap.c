@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/queue.h>
@@ -76,6 +77,8 @@ pcap_info_t *
 _pcap_open(char *filename, uint16_t port)
 {
 	pcap_info_t   *pcap = NULL;
+	struct stat   s;
+	int           ret;
 
 	if (filename == NULL) {
 		printf("%s: filename is NULL\n", __func__);
@@ -130,6 +133,16 @@ _pcap_open(char *filename, uint16_t port)
 		pcap->info.version_major    = ntohs(pcap->info.version_major);
 		pcap->info.version_minor    = ntohs(pcap->info.version_minor);
 	}
+
+
+	ret = stat(filename, &s);
+    if (ret) {
+        goto leave;
+	}
+
+	s.st_size -= sizeof(pcap_hdr_t);
+    pcap->cap_sz = s.st_size;
+
 	_pcap_info(pcap, port, 0);
 
 	return pcap;
@@ -165,6 +178,7 @@ _pcap_info(pcap_info_t *pcap, uint16_t port, int flag)
 	printf(" snaplen: %d,", pcap->info.snaplen);
 	printf(" sigfigs: %d,", pcap->info.sigfigs);
 	printf(" network: %d", pcap->info.network);
+	printf(" PCAP size: %lu", pcap->cap_sz);
 	printf(" Endian: %s\n", pcap->endian == BIG_ENDIAN ? "Big" : "Little");
 	if (flag)
 		printf("  Packet count: %d\n", pcap->pkt_count);

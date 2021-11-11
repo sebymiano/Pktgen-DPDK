@@ -311,6 +311,8 @@ pktgen_pcap_parse(pcap_info_t *pcap, port_info_t *info, unsigned qid)
 	uint64_t data_size, pkt_sizes = 0;
 	char buffer[DEFAULT_MBUF_SIZE];
 	char name[RTE_MEMZONE_NAMESIZE];
+	// unsigned int cpt = 0;
+	// float percent = 0.0;
 
 	if ( (pcap == NULL) || (info == NULL) )
 		return -1;
@@ -341,6 +343,13 @@ pktgen_pcap_parse(pcap_info_t *pcap, port_info_t *info, unsigned qid)
 
 		if (len > max_pkt_size)
 			max_pkt_size = len;
+
+		// if ((elt_count % 1024) == 0) {
+        //     percent = 100 * (float)elt_count / (float)pcap->cap_sz;
+		// 	// scrn_printf(0, 0, "\rfile read at %02.2f%%", 16, percent);
+		// 	// printf("\rfile read at %02.2f%%", percent);
+		// 	printf("\nFile read at percentage: %.2f (pkt: %d, size: %lu)", percent, elt_count, pcap->cap_sz);
+        // }
 	}
 
 	/* If count is greater then zero then we allocate and create the PCAP mbuf pool. */
@@ -357,25 +366,28 @@ pktgen_pcap_parse(pcap_info_t *pcap, port_info_t *info, unsigned qid)
 			elt_count = (MAX_MBUFS_PER_PORT / elt_count) * elt_count;
 
 		/* Compute final size of each mbuf by adding the structure header and headroom. */
-		max_pkt_size += sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM;
+		// max_pkt_size += sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM;
+		max_pkt_size += sizeof(struct rte_mbuf);
+		max_pkt_size += (max_pkt_size % (sizeof(int)));
+
+		scrn_printf(0, 0, "\n\n\n-> Needed MBUF size: %u\n", max_pkt_size);
 
 		scrn_printf(0, 0, "\r    Create: %-*s   \b", 16, name);
+		scrn_printf(0, 0, "\nCreate mempool of %u mbufs of %u octs\n", elt_count, max_pkt_size);
 		info->q[qid].pcap_mp = rte_mempool_create(
 		                name,
 		                elt_count,
 		                max_pkt_size,
-		                0,
+		                32,
 		                sizeof(struct rte_pktmbuf_pool_private),
-		                rte_pktmbuf_pool_init,
-		                NULL,
-		                pktgen_pcap_mbuf_ctor,
-		                (void *)pcap,
+		                rte_pktmbuf_pool_init, NULL,
+		                pktgen_pcap_mbuf_ctor, (void *)pcap,
 						rte_eth_dev_socket_id(info->pid),
 		                MEMPOOL_F_DMA);
 		scrn_printf(0, 0, "\r");
 		if (info->q[qid].pcap_mp == NULL)
-			pktgen_log_panic("Cannot init port %d for %d PCAP packets",
-					 info->pid, pcap->pkt_count);
+			pktgen_log_panic("Cannot init port %d for %d PCAP packets: %s\n",
+					 info->pid, pcap->pkt_count, rte_strerror(rte_errno));
 
 		data_size = ((uint64_t)pcap->pkt_count * max_pkt_size);
 		scrn_printf(0, 0,

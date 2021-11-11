@@ -45,6 +45,7 @@ typedef struct pcap_info_s {
 	uint32_t pkt_size;	/**< Average packet size */
 	uint32_t pkt_count;	/**< pcap count of packets */
 	uint32_t pkt_idx;	/**< Index into the current PCAP file */
+	size_t   cap_sz;
 	pcap_hdr_t info;	/**< information on the PCAP file */
 } pcap_info_t;
 
